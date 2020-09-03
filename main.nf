@@ -13,17 +13,19 @@ params
 #==============================================
 */
 
-params.resultsDir = 'results/FIXME'
+params.resultsDir = 'results/gatk'
 params.saveMode = 'copy'
 params.filePattern = "./*_{R1,R2}.fastq.gz"
 
+ch_refFasta = Channel.value("$baseDir/refFILE")
 
-ch_refFILE = Channel.value("$baseDir/refFILE")
-
-
+params.refFasta = "NC000962_3.fasta"
 
 Channel.fromFilePairs(params.filePattern)
-        .into { ch_in_PROCESS }
+        .set { ch_in_gatk }
+
+Channel.value("$workflow.launchDir/$params.refFasta")
+        .set { ch_refFasta }
 
 /*
 #==============================================

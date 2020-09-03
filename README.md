@@ -1,4 +1,4 @@
-# Nextflow wrapper for `FIXME` process.
+# Nextflow wrapper for `gatk` process.
 
 ## Pre-requisites
 
@@ -10,7 +10,7 @@
 ## Usage
 
 ```
-nextflow run https://github.com/nextflow-hub/FIXME
+nextflow run https://github.com/nextflow-hub/gatk
 ```
 
 ## Options
@@ -21,7 +21,7 @@ nextflow run https://github.com/nextflow-hub/FIXME
 By default, the process assumes the files to follow the `*_{R1,R2}.fastq.gz` pattern, which could be customized using this option
 
 ```
-nextflow run https://github.com/nextflow-hub/FIXME --filePattern './*_{1,2}.fastq.gz'
+nextflow run https://github.com/nextflow-hub/gatk --filePattern './*_{1,2}.fastq.gz'
 ```
 
 - `resultsDir`
@@ -29,7 +29,7 @@ nextflow run https://github.com/nextflow-hub/FIXME --filePattern './*_{1,2}.fast
 By default, it stores the result files locally inside the `results` directory.
 
 ```
-nextflow run https://github.com/nextflow-hub/FIXME --resultsDir /path/to/custom/resultsDir
+nextflow run https://github.com/nextflow-hub/gatk --resultsDir /path/to/custom/resultsDir
 ```
 
 - `saveMode`
@@ -39,7 +39,7 @@ By default, the pipeline publishes the results in the `resultsDir` by copying th
 You can update this behavior by simply specifying the alternative such as `move` or `link` etc. 
 
 ```
-nextflow run https://github.com/nextflow-hub/FIXME --saveMode move
+nextflow run https://github.com/nextflow-hub/gatk --saveMode move
 ```
 
 For more information please refer [Nextflow documentation](https://www.nextflow.io/docs/latest/process.html#publishdir)
