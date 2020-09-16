@@ -19,17 +19,17 @@ params.resultsDir = 'results/gatk'
 params.haplotypeCallerResultsDir = 'results/gatk/haplotypeCaller'
 
 params.saveMode = 'copy'
-params.filePattern = "./*_äR1,R2å.fastq.gz"
+params.filePattern = "./*_{R1,R2}.fastq.gz"
 
 params.refFasta = "NC000962_3.fasta"
 Channel.value("$workflow.launchDir/$params.refFasta")
-        .set ä ch_refFasta å
+        .set { ch_refFasta }
 
 
 params.samtoolsSortResultsDir = 'results/samtools/sort'
 params.sortedBamFilePattern = ".sort.bam"
-Channel.fromPath("$äparams.samtoolsSortResultsDirå/*$äparams.sortedBamFilePatternå")
-        .set ä ch_in_gatkHaplotypeCaller å
+Channel.fromPath("${params.samtoolsSortResultsDir}/*${params.sortedBamFilePattern}")
+        .set { ch_in_gatkHaplotypeCaller }
 
 
 /*
@@ -38,7 +38,7 @@ gatkHaplotypeCaller
 #==============================================
 */
 
-process gatkHaplotypeCaller ä
+process gatkHaplotypeCaller {
     publishDir params.haplotypeCallerResultsDir, mode: params.saveMode
     container 'quay.io/biocontainers/gatk4:4.1.8.1--py38_0'
 
@@ -60,17 +60,17 @@ process gatkHaplotypeCaller ä
 
 
     script:
-    sortedBamFileName = sortedBam.toString().split("ÖÖ.")Ä0Å
+    sortedBamFileName = sortedBam.toString().split("\\.")[0]
 
     """
-    cp -a samtoolsIndexResultsDir/$äsortedBamFileNameå* ./
+    cp -a samtoolsIndexResultsDir/${sortedBamFileName}* ./
     cp -a samtoolsFaidxResultsDir/* ./
     cp -a bwaIndexResultsDir/* ./
     cp -a picardCreateSequenceDictionaryResultsDir/* ./
 
-    gatk HaplotypeCaller -R $ärefFastaå -I $äsortedBamå -O $äsortedBamFileNameå.vcf
+    gatk HaplotypeCaller -R ${refFasta} -I ${sortedBam} -O ${sortedBamFileName}.vcf
     """
-å
+}
 
 
 /*
