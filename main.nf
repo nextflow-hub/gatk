@@ -1,4 +1,5 @@
 #!/usr/bin/env nextflow
+import java.nio.file.Paths
 
 /*
 #==============================================
@@ -13,41 +14,63 @@ params
 #==============================================
 */
 
-params.resultsDir = 'results/FIXME'
+params.haplotypeCaller = false
+
+params.resultsDir = 'results/gatk'
+params.haplotypeCallerResultsDir = 'results/gatk/haplotypeCaller'
+
 params.saveMode = 'copy'
 params.filePattern = "./*_{R1,R2}.fastq.gz"
 
+params.refFasta = "NC000962_3.fasta"
+Channel.value("$workflow.launchDir/$params.refFasta")
+        .set { ch_refFasta }
 
-ch_refFILE = Channel.value("$baseDir/refFILE")
 
+params.samtoolsSortResultsDir = 'results/samtools/sort'
+params.sortedBamFilePattern = ".sort.bam"
+Channel.fromPath("${params.samtoolsSortResultsDir}/*${params.sortedBamFilePattern}")
+        .set { ch_in_gatkHaplotypeCaller }
 
-
-Channel.fromFilePairs(params.filePattern)
-        .into { ch_in_PROCESS }
 
 /*
 #==============================================
-PROCESS
+gatkHaplotypeCaller
 #==============================================
 */
 
-process PROCESS {
-    publishDir params.resultsDir, mode: params.saveMode
-    container 'FIXME'
+process gatkHaplotypeCaller {
+    publishDir params.haplotypeCallerResultsDir, mode: params.saveMode
+    container 'quay.io/biocontainers/gatk4:4.1.8.1--py38_0'
 
+
+    when:
+    params.haplotypeCaller 
 
     input:
-    set genomeFileName, file(genomeReads) from ch_in_PROCESS
+    path refFasta from ch_refFasta
+    path "samtoolsIndexResultsDir"  from Channel.value(Paths.get("results/samtools/index"))
+    path "samtoolsFaidxResultsDir"  from Channel.value(Paths.get("results/samtools/faidx"))
+    path "bwaIndexResultsDir" from Channel.value(Paths.get("results/bwa/index"))
+    path "picardCreateSequenceDictionaryResultsDir" from Channel.value(Paths.get("results/picard/createSequenceDictionary"))
+    file(sortedBam) from ch_in_gatkHaplotypeCaller
+
+
 
     output:
-    path FIXME into ch_out_PROCESS
+    file "*vcf*" into ch_out_gatkHaplotypeCaller
 
 
     script:
-    genomeName = genomeFileName.toString().split("\\_")[0]
+    sortedBamFileName = sortedBam.toString().split("\\.")[0]
 
     """
-    CLI PROCESS
+    cp -a samtoolsIndexResultsDir/${sortedBamFileName}* ./
+    cp -a samtoolsFaidxResultsDir/* ./
+    cp -a bwaIndexResultsDir/* ./
+    cp -a picardCreateSequenceDictionaryResultsDir/* ./
+
+    gatk HaplotypeCaller -R ${refFasta} -I ${sortedBam} -O ${sortedBamFileName}.vcf
     """
 }
 
