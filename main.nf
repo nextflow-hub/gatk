@@ -28,10 +28,8 @@ params.refFasta = "NC000962_3.fasta"
 Channel.value("$workflow.launchDir/$params.refFasta")
         .set { ch_refFasta }
 
-// FIXME
-params.samtoolsSortResultsDir = 'results/samtools/sort'
 params.sortedBamFilePattern = ".sort.bam"
-Channel.fromPath("${params.samtoolsSortResultsDir}/*${params.sortedBamFilePattern}")
+Channel.fromPath("${params.markDuplicatesSparkResultsDir}/*${params.sortedBamFilePattern}")
         .set { ch_in_haplotypeCaller }
 
 
@@ -39,6 +37,40 @@ params.bwaMemResultsDir = './results/bwa/mem'
 params.samFilePattern = ".sam"
 Channel.fromPath("${params.bwaMemResultsDir}/*${params.samFilePattern}")
         .set { ch_in_markDuplicatesSpark }
+
+
+
+/*
+#==============================================
+MarkDuplicatesSpark
+#==============================================
+*/
+
+process MarkDuplicatesSpark {
+    publishDir params.markDuplicatesSparkResultsDir, mode: params.saveMode
+    container 'quay.io/biocontainers/gatk4:4.1.8.1--py38_0'
+
+
+    when:
+    params.markDuplicatesSpark
+
+    input:
+    path refFasta from ch_refFasta
+    file(samFile) from ch_in_markDuplicatesSpark
+
+
+    output:
+    tuple file("*bam*"),
+            file("*_metrics.txt") into ch_out_markDuplicatesSpark
+
+
+    script:
+    samFileName = samFile.toString().split("\\.")[0]
+
+    """
+    gatk MarkDuplicatesSpark -I ${samFile} -M ${samFileName}_dedup_metrics.txt -O ${samFileName}.dedup.sort.bam
+    """
+}
 
 
 /*
@@ -81,40 +113,6 @@ process HaplotypeCaller {
     gatk HaplotypeCaller -R ${refFasta} -I ${sortedBam} -O ${sortedBamFileName}.vcf
     """
 }
-
-
-/*
-#==============================================
-MarkDuplicatesSpark
-#==============================================
-*/
-
-process MarkDuplicatesSpark {
-    publishDir params.markDuplicatesSparkResultsDir, mode: params.saveMode
-    container 'quay.io/biocontainers/gatk4:4.1.8.1--py38_0'
-
-
-    when:
-    params.markDuplicatesSpark
-
-    input:
-    path refFasta from ch_refFasta
-    file(samFile) from ch_in_markDuplicatesSpark
-
-
-    output:
-    tuple file("*bam*"),
-            file("*_metrics.txt") into ch_out_markDuplicatesSpark
-
-
-    script:
-    samFileName = samFile.toString().split("\\.")[0]
-
-    """
-    gatk MarkDuplicatesSpark -I ${samFile} -M ${samFileName}_dedup_metrics.txt -O ${samFileName}.dedup.sort.bam
-    """
-}
-
 
 
 
