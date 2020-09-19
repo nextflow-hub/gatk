@@ -17,7 +17,6 @@ params
 params.haplotypeCaller = false
 params.markDuplicatesSpark = false
 
-params.resultsDir = 'results/gatk'
 params.haplotypeCallerResultsDir = 'results/gatk/haplotypeCaller'
 params.markDuplicatesSparkResultsDir = 'results/gatk/markDuplicatesSpark'
 
@@ -29,16 +28,16 @@ params.refFasta = "NC000962_3.fasta"
 Channel.value("$workflow.launchDir/$params.refFasta")
         .set { ch_refFasta }
 
-
+// FIXME
 params.samtoolsSortResultsDir = 'results/samtools/sort'
 params.sortedBamFilePattern = ".sort.bam"
 Channel.fromPath("${params.samtoolsSortResultsDir}/*${params.sortedBamFilePattern}")
-        .set { ch_in_gatkHaplotypeCaller }
+        .set { ch_in_haplotypeCaller }
 
 
 params.bwaMemResultsDir = './results/bwa/mem'
-params.bamFilePattern = ".bam"
-Channel.fromPath("${params.bwaMemResultsDir}/*${params.bamFilePattern}")
+params.samFilePattern = ".sam"
+Channel.fromPath("${params.bwaMemResultsDir}/*${params.samFilePattern}")
         .set { ch_in_markDuplicatesSpark }
 
 
@@ -54,7 +53,7 @@ process HaplotypeCaller {
 
 
     when:
-    params.haplotypeCaller 
+    params.haplotypeCaller
 
     input:
     path refFasta from ch_refFasta
@@ -62,12 +61,12 @@ process HaplotypeCaller {
     path "samtoolsFaidxResultsDir"  from Channel.value(Paths.get("results/samtools/faidx"))
     path "bwaIndexResultsDir" from Channel.value(Paths.get("results/bwa/index"))
     path "picardCreateSequenceDictionaryResultsDir" from Channel.value(Paths.get("results/picard/createSequenceDictionary"))
-    file(sortedBam) from ch_in_gatkHaplotypeCaller
+    file(sortedBam) from ch_in_haplotypeCaller
 
 
 
     output:
-    file "*vcf*" into ch_out_gatkHaplotypeCaller
+    file "*vcf*" into ch_out_haplotypeCaller
 
 
     script:
@@ -96,7 +95,7 @@ process MarkDuplicatesSpark {
 
 
     when:
-    params.markDuplicatesSpark 
+    params.markDuplicatesSpark
 
     input:
     path refFasta from ch_refFasta
@@ -104,15 +103,15 @@ process MarkDuplicatesSpark {
 
 
     output:
-    tuple file "*bam*",
-             file "*_metrics.txt"into ch_out_gatkHaplotypeCaller
+    tuple file("*bam*"),
+            file("*_metrics.txt") into ch_out_markDuplicatesSpark
 
 
     script:
     samFileName = samFile.toString().split("\\.")[0]
 
     """
-    gatk MarkDuplicatesSpark -I ${samFile} -M ${samFileName}_dedup_metrics.txt -O ${samFileName}.sort.bam
+    gatk MarkDuplicatesSpark -I ${samFile} -M ${samFileName}_dedup_metrics.txt -O ${samFileName}.dedup.sort.bam
     """
 }
 
