@@ -114,7 +114,8 @@ process HaplotypeCaller {
     """
 }
 
-
+// gatk SelectVariants -R NC000962_3.fasta -V ERR751355.vcf --select-type-to-include INDEL -O ERR751355.indels.vcf
+// gatk SelectVariants -R NC000962_3.fasta -V ERR751355.vcf --select-type-to-include SNP -O ERR751355.snps.vcf
 
 /*
 #==============================================
